@@ -307,46 +307,6 @@
 
 <script>
 
-    function displayOpenTickets() {
-    const tbody = document.getElementById('databaseTableBody');
-    tbody.innerHTML = ''; // Limpa a tabela antes de preenchê-la novamente
-
-    // Filtrar chamados que estão em aberto (sem valor no campo "fim")
-    const openTickets = database.filter(ticket => !ticket.fim);
-
-    openTickets.forEach(ticket => {
-        const row = tbody.insertRow();
-        const cells = [
-            ticket.tempo_previsto || '',
-            ticket.cliente || '',
-            ticket.problema || '',
-            ticket.operador || '',
-            ticket.executor || '',
-            ticket.inicio || '',
-            ticket.status_prazo || ''
-        ];
-
-        cells.forEach(value => {
-            const cell = row.insertCell();
-            cell.textContent = value;
-        });
-
-        // Adicionar classes de cor com base no status do prazo
-        if (ticket.status_prazo === 'No Prazo') {
-            row.classList.add('green');
-        } else if (ticket.status_prazo === 'Fora do Prazo') {
-            row.classList.add('red');
-        }
-    });
-}
-
-// Exibir chamados automaticamente ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-    displayOpenTickets();
-});
-
-      const BASE_API_URL = "http:// inovanet.ind.br";
-
 function renderGraphs() {
     const customerFilterPie = document.getElementById('customerFilterPie').value;
     const customerFilterBar = document.getElementById('customerFilterBar').value;
@@ -645,8 +605,8 @@ function updateDatabaseTable(filters = {}) {
 
     const operadores = ["", "Castelo", "Marcelo", "kaline", "Gabriel", "Jefferson"];
     const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-    const problemas = ["","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia"];
-    const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43",
+    const problemas = ["","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia",,];
+    const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43", "43",
 
 ]
     let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
@@ -706,8 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function saveTicketsState() {
     const ticketList = document.getElementById('ticketList');
     const tickets = [];
-    const tempoPrevisto = ticketDiv.querySelector('input[type="text"]');
-if (!tempoPrevisto) return;
     
     ticketList.querySelectorAll('.ticket-row').forEach(ticketDiv => {
         const ticket = {
@@ -770,14 +728,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchDatabaseFromServer() {
-        return fetch(`${BASE_API_URL}/api/chamados`)
-            .then(response => response.json())
-            .then(data => {
-                database = data; // Atualize a variável local com os dados do servidor
-                updateDatabaseTable(); // Atualize a tabela na página
-            })
-            .catch(error => console.error('Erro ao buscar dados do servidor:', error));
-    }
+    return fetch('https://seu-servidor.com/api/chamados')
+        .then(response => response.json())
+        .then(data => {
+            database = data; // Atualize a variável local com os dados do servidor
+            updateDatabaseTable(); // Atualize a tabela na página
+        })
+        .catch(error => console.error('Erro ao buscar dados do servidor:', error));
+}
 
     function createSelect(options, id) {
         const select = document.createElement('select');
@@ -853,8 +811,8 @@ function archiveTicket(ticketDiv) {
             return;
         }
 
-         database.push(ticket);
-            saveDatabaseToServer();
+        database.push(ticket);
+        localStorage.setItem('ticketDatabase', JSON.stringify(database));
 
         if (timers.has(ticketDiv)) {
             clearInterval(timers.get(ticketDiv));
@@ -878,26 +836,28 @@ function archiveTicket(ticketDiv) {
 const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
 
 function calculateTotalTimeFromMilliseconds(ms) {
-    const hours = String(Math.floor(ms / 3600000)).padStart(2, '0');
-    const minutes = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
-    const seconds = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+    const hours = String(Math.floor(accumulatedTime / 3600000)).padStart(2, '0');
+    const minutes = String(Math.floor((accumulatedTime % 3600000) / 60000)).padStart(2, '0');
+    const seconds = String(Math.floor((accumulatedTime % 60000) / 1000)).padStart(2, '0');
+    const tempoDecorrido = `${hours}:${minutes}:${seconds}`; // Format as 00:00:00
+
     return `${hours}:${minutes}:${seconds}`;
 }
 
- function saveDatabaseToServer() {
-        fetch(`${BASE_API_URL}/api/chamados`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(database), // Envie a variável local para o servidor
-        }).catch(error => console.error('Erro ao salvar dados no servidor:', error));
-    }
+function saveDatabaseToServer() {
+    fetch('https://seu-servidor.com/api/chamados', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(database), // Envie a variável local para o servidor
+    }).catch(error => console.error('Erro ao salvar dados no servidor:', error));
+}
 
-    // Chame fetchDatabaseFromServer ao carregar a página
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchDatabaseFromServer(); // Buscar os dados ao carregar a página
-    });
+// Chame fetchDatabaseFromServer ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    fetchDatabaseFromServer(); // Buscar os dados ao carregar a página
+});
 
 function addNewTicket(ticket = {}) {
     const ticketList = document.getElementById('ticketList');
@@ -1007,20 +967,10 @@ function addNewTicket(ticket = {}) {
 
 // Ensure the function parseDateTimeStr is correctly implemented
 function parseDateTimeStr(dateTimeStr) {
-    if (!dateTimeStr || typeof dateTimeStr !== 'string') return null;
-    try {
-        if (dateTimeStr.includes(' ')) {
-            const [dateStr, timeStr] = dateTimeStr.split(' ');
-            const [day, month, year] = dateStr.split('/').map(Number);
-            const [hours, minutes, seconds = 0] = timeStr.split(':').map(Number);
-            return new Date(year, month - 1, day, hours, minutes, seconds);
-        }
-        const [day, month, year] = dateTimeStr.split('/').map(Number);
-        return new Date(year, month - 1, day);
-    } catch (e) {
-        console.error('Erro ao converter data:', dateTimeStr, e);
-        return null;
-    }
+    const [datePart, timePart] = dateTimeStr.split(' ');
+    const [day, month, year] = datePart.split('/').map(Number);
+    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes, seconds || 0);
 }
 
 
@@ -1045,6 +995,9 @@ function timeToSeconds(timeStr) {
 
 
 // Função auxiliar para validar o formato do tempo
+function isValidTimeFormat(timeStr) {
+    return /^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr);
+}
 
 // Função startTimer corrigida
 function startTimer(ticketDiv, resumeFrom = null) {
@@ -1137,6 +1090,10 @@ function updateTicketColor(ticketDiv, percentage) {
             return /^\d{1,2}:\d{1,2}:\d{1,2}$/.test(timeStr);
         }
 
+        function timeToSeconds(timeStr) {
+            const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+            return hours * 3600 + minutes * 60 + seconds;
+        }
 
 function handleTicketAction(action, ticketDiv) {
     switch(action) {
@@ -1184,6 +1141,45 @@ function calculateTotalTimeFromMilliseconds(ms) {
 
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
+
+
+        function startTimer(ticketDiv, resumeFrom = null) {
+            const timerDisplay = ticketDiv.querySelector('.timer');
+            const tsInput = ticketDiv.querySelector('.input-time');
+            const ts = timeToSeconds(tsInput.value || '0:0:0');
+            let timeLeft = resumeFrom !== null ? resumeFrom : ts;
+            let timerType = ticketDiv.getAttribute('data-timer-type');
+
+            if (timers.has(ticketDiv)) {
+                clearInterval(timers.get(ticketDiv));
+            }
+
+            const startTime = Date.now(); // Capture the start time
+            ticketDiv.setAttribute('data-start-time', startTime);
+
+            const timer = setInterval(() => {
+                if (timerType === 'T' && timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay(timerDisplay, timeLeft, 'T');
+                    updateTicketColor(ticketDiv, timeLeft / ts);
+
+                    if (timeLeft === 0) {
+                        timerType = 'A';
+                        ticketDiv.setAttribute('data-timer-type', 'A');
+                        timeLeft = 0;
+                        ticketDiv.classList.add('red');
+                    }
+                } else {
+                    timeLeft++;
+                    updateTimerDisplay(timerDisplay, timeLeft, 'A');
+                    ticketDiv.classList.add('red');
+                }
+            }, 1000);
+
+            timers.set(ticketDiv, timer);
+}
+
+
 
         function validatePasswordAndExecute(callback) {
             const username = prompt('Digite seu nome de usuário:');
