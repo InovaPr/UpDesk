@@ -811,8 +811,8 @@ function archiveTicket(ticketDiv) {
             return;
         }
 
-        database.push(ticket);
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
+         database.push(ticket);
+            saveDatabaseToServer();
 
         if (timers.has(ticketDiv)) {
             clearInterval(timers.get(ticketDiv));
