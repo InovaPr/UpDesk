@@ -307,6 +307,44 @@
 
 <script>
 
+    function displayOpenTickets() {
+    const tbody = document.getElementById('databaseTableBody');
+    tbody.innerHTML = ''; // Limpa a tabela antes de preenchê-la novamente
+
+    // Filtrar chamados que estão em aberto (sem valor no campo "fim")
+    const openTickets = database.filter(ticket => !ticket.fim);
+
+    openTickets.forEach(ticket => {
+        const row = tbody.insertRow();
+        const cells = [
+            ticket.tempo_previsto || '',
+            ticket.cliente || '',
+            ticket.problema || '',
+            ticket.operador || '',
+            ticket.executor || '',
+            ticket.inicio || '',
+            ticket.status_prazo || ''
+        ];
+
+        cells.forEach(value => {
+            const cell = row.insertCell();
+            cell.textContent = value;
+        });
+
+        // Adicionar classes de cor com base no status do prazo
+        if (ticket.status_prazo === 'No Prazo') {
+            row.classList.add('green');
+        } else if (ticket.status_prazo === 'Fora do Prazo') {
+            row.classList.add('red');
+        }
+    });
+}
+
+// Exibir chamados automaticamente ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    displayOpenTickets();
+});
+
       const BASE_API_URL = "http:// inovanet.ind.br";
 
 function renderGraphs() {
