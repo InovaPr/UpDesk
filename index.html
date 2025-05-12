@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchDatabaseFromServer() {
-    return fetch('https://seu-servidor.com/api/chamados')
+    return fetch(' http:// inovanet.ind.br')
         .then(response => response.json())
         .then(data => {
             database = data; // Atualize a variável local com os dados do servidor
@@ -750,6 +750,14 @@ function fetchDatabaseFromServer() {
         })
         .catch(error => console.error('Erro ao buscar dados do servidor:', error));
 }
+
+async function fetchChamadosFromServer() {
+    try {
+        const response = await fetch('http:// inovanet.ind.br'); // Substitua pela URL real do backend
+        const data = await response.json();
+        database = data; // Atualiza o banco de dados local com os dados do servidor
+        updateDatabaseTable(); // Atualiza a tabela exib
+
 
     function createSelect(options, id) {
         const select = document.createElement('select');
