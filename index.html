@@ -309,7 +309,7 @@
 
     async function fetchChamadosFromServer() {
     try {
-        const response = await fetch('https://seu-servidor.com/api/chamados'); // Substitua pela URL real do seu backend
+        const response = await fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241'); // Substitua pela URL real do seu backend
         const data = await response.json();
         database = data; // Atualiza o banco de dados local com os dados do servidor
         updateDatabaseTable(); // Atualiza a tabela na página
@@ -623,7 +623,7 @@ function updateDatabaseTable(filters = {}) {
     const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43", "43",
 
 ]
-    let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
+
     let timers = new Map();
     let accumulatedTimes = new Map();
 
@@ -634,8 +634,7 @@ function login() {
     const user = users.find(u => u[0] === username && u[1] === password);
     
     if (user) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('username', username);
+
         
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
@@ -646,7 +645,7 @@ function login() {
 
 
 function checkLoginState() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
     
     if (isLoggedIn) {
         document.getElementById('loginContainer').style.display = 'none';
@@ -658,8 +657,7 @@ function checkLoginState() {
 }
 
 function logout() {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
+
     document.getElementById('loginContainer').style.display = 'block';
     document.getElementById('mainContainer').style.display = 'none';
 }
@@ -699,11 +697,11 @@ function saveTicketsState() {
         tickets.push(ticket);
     });
     
-    localStorage.setItem('openTickets', JSON.stringify(tickets));
+
 }
 
 function loadTicketsState() {
-    
+
     tickets.forEach(ticket => {
         addNewTicket(ticket);
 
@@ -826,7 +824,6 @@ function archiveTicket(ticketDiv) {
         }
 
         database.push(ticket);
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
 
         if (timers.has(ticketDiv)) {
             clearInterval(timers.get(ticketDiv));
