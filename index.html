@@ -321,25 +321,37 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchChamadosFromServer(); 
 });
 
-const socket = new WebSocket('wss:https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241'); 
+const socket = new WebSocket('wss:https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241/ws'); // Substitua pela URL correta do seu servidor WebSocket
 
-
+// Quando o WebSocket se conectar
 socket.addEventListener('open', () => {
     console.log('Conectado ao servidor WebSocket.');
 });
 
+// Quando uma mensagem for recebida do servidor WebSocket
 socket.addEventListener('message', (event) => {
     const updatedDatabase = JSON.parse(event.data);
     database = updatedDatabase; // Atualiza o banco de dados local
     updateDatabaseTable(); // Atualiza a tabela de chamados na interface
 });
+function saveNewTicketToServer(ticket) {
+    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ticket) // Enviar o novo chamado para o servidor
+    }).then(() => {
+        console.log('Novo chamado salvo no servidor.');
+    }).catch(error => console.error('Erro ao salvar chamado no servidor:', error));
+}
 
 function fetchDatabaseFromServer() {
     fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241')
         .then(response => response.json())
         .then(data => {
-            database = data; // Atualize o banco de dados local com os dados do servidor
-            updateDatabaseTable(); // Atualize a tabela na página
+            database = data; // Atualiza o banco de dados local
+            updateDatabaseTable(); // Atualiza a tabela de chamados na interface
         })
         .catch(error => console.error('Erro ao buscar dados do servidor:', error));
 }
@@ -896,7 +908,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://seu-servidor.com/api/chamados', {
+    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
