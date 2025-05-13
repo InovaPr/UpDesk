@@ -703,7 +703,7 @@ function saveTicketsState() {
 }
 
 function loadTicketsState() {
-    const tickets = JSON.parse(localStorage.getItem('openTickets')) || [];
+    
     tickets.forEach(ticket => {
         addNewTicket(ticket);
 
@@ -859,7 +859,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://seu-servidor.com/api/chamados', {
+    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
