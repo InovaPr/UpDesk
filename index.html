@@ -329,10 +329,11 @@ socket.addEventListener('open', () => {
 });
 
 // Quando uma mensagem for recebida do servidor WebSocket
-socket.addEventListener('message', (event) => {
-    const updatedDatabase = JSON.parse(event.data);
-    database = updatedDatabase; // Atualiza o banco de dados local
-    updateDatabaseTable(); // Atualiza a tabela de chamados na interface
+socket.addEventListener('close', () => {
+    console.warn('WebSocket desconectado. Tentando reconectar...');
+    setTimeout(() => {
+        connectWebSocket(); // Função para reconectar
+    }, 5000);
 });
 
 function saveNewTicketToServer(ticket) {
