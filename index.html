@@ -334,6 +334,17 @@ socket.addEventListener('message', (event) => {
     database = updatedDatabase; // Atualiza o banco de dados local
     updateDatabaseTable(); // Atualiza a tabela de chamados na interface
 });
+
+setInterval(() => {
+    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241')
+        .then(response => response.json())
+        .then(data => {
+            database = data;
+            updateDatabaseTable();
+        })
+        .catch(error => console.error('Erro ao buscar dados do servidor:', error));
+}, 500
+
 function saveNewTicketToServer(ticket) {
     fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
         method: 'POST',
