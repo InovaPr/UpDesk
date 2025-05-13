@@ -527,10 +527,10 @@ function downloadGraphsAsWord() {
 function clearDatabase() {
     if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
         database = [];
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
         updateDatabaseTable();
     }
 }
+
 
 function updateDatabaseTable(filters = {}) {
     const tbody = document.getElementById('databaseTableBody');
@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchDatabaseFromServer() {
-    return fetch('https://seu-servidor.com/api/chamados')
+    return fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241')
         .then(response => response.json())
         .then(data => {
             database = data; // Atualize a variável local com os dados do servidor
