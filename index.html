@@ -634,8 +634,10 @@ function login() {
     const user = users.find(u => u[0] === username && u[1] === password);
     
     if (user) {
+        // Salvar estado de login no localStorage
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loggedInUser', username);
 
-        
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
     } else {
@@ -645,9 +647,10 @@ function login() {
 
 
 function checkLoginState() {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const loggedInUser = localStorage.getItem('loggedInUser');
 
-    
-    if (isLoggedIn) {
+    if (isLoggedIn && loggedInUser) {
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('mainContainer').style.display = 'block';
     } else {
@@ -656,14 +659,24 @@ function checkLoginState() {
     }
 }
 
+
+
+
+
+
+
+
 function logout() {
+    // Remover estado de login do localStorage
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('loggedInUser');
 
     document.getElementById('loginContainer').style.display = 'block';
     document.getElementById('mainContainer').style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkLoginState();
+    checkLoginState(); // Verifica o estado de login
     flatpickr("#filterDateRange", {
         mode: "range",
         dateFormat: "d/m/Y",
