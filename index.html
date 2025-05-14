@@ -336,6 +336,110 @@ socket.addEventListener('close', () => {
     }, 5000);
 });
 
+const API_URL = 'https://ns1.dominios.uol.com.br';
+const WS_URL = 'wss://ns1.dominios.uol.com.br/ws';
+
+// Função para realizar login e obter token
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('authToken', data.token);
+            console.log('Login bem-sucedido!');
+            checkLoginState();
+        } else {
+            throw new Error('Login falhou');
+        }
+    } catch (error) {
+        console.error('Erro ao realizar login:', error);
+        document.getElementById('loginError').textContent = 'Usuário ou senha incorretos';
+    }
+}
+
+// Middleware para adicionar token a cabeçalhos de requisição
+function authHeader() {
+    const token = localStorage.getItem('authToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Função para sincronizar dados via WebSocket
+function setupWebSocket() {
+    const socket = new WebSocket(WS_URL);
+
+    socket.addEventListener('open', () => {
+        console.log('Conectado ao WebSocket.');
+    });
+
+    socket.addEventListener('message', event => {
+        console.log('Mensagem recebida do WebSocket:', event.data);
+        const data = JSON.parse(event.data);
+        if (data.type === 'NEW_TICKET') {
+            addNewTicket(data.ticket);
+        }
+    });
+
+    socket.addEventListener('close', () => {
+        console.warn('WebSocket desconectado. Tentando reconectar...');
+        setTimeout(setupWebSocket, 5000);
+    });
+
+    return socket;
+}
+
+// Sincronizar banco de dados via REST API
+async function fetchTickets() {
+    try {
+        const response = await fetch(`${API_URL}/tickets`, {
+            headers: {
+                ...authHeader()
+            }
+        });
+
+        if (response.ok) {
+            const tickets = await response.json();
+            database = tickets;
+            updateDatabaseTable();
+        } else {
+            throw new Error('Falha ao buscar dados do servidor.');
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados do servidor:', error);
+    }
+}
+
+// Salvar novo chamado no servidor
+async function saveNewTicketToServer(ticket) {
+    try {
+        const response = await fetch(`${API_URL}/tickets`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader()
+            },
+            body: JSON.stringify(ticket)
+        });
+
+        if (response.ok) {
+            console.log('Novo chamado salvo no servidor.');
+        } else {
+            throw new Error('Falha ao salvar chamado.');
+        }
+    } catch (error) {
+        console.error('Erro ao salvar chamado:', error);
+    }
+}
+
 function saveNewTicketToServer(ticket) {
     fetch('https://ns1.dominios.uol.com.br', {
         method: 'POST',
