@@ -309,7 +309,7 @@
 
     async function fetchChamadosFromServer() {
     try {
-        const response = await fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241'); 
+        const response = await fetch('https://ns1.dominios.uol.com.br'); 
         const data = await response.json();
         database = data; 
         updateDatabaseTable(); 
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchChamadosFromServer(); 
 });
 
-const socket = new WebSocket('wss://https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241.com/ws'); // Substitua pela URL correta do WebSockett
+const socket = new WebSocket('wss://https://ns1.dominios.uol.com.br/ws'); // Substitua pela URL correta do WebSockett
 
 // Quando o WebSocket se conectar
 socket.addEventListener('open', () => {
@@ -337,7 +337,7 @@ socket.addEventListener('close', () => {
 });
 
 function saveNewTicketToServer(ticket) {
-    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
+    fetch('https://ns1.dominios.uol.com.br', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -349,7 +349,7 @@ function saveNewTicketToServer(ticket) {
 }
 
 function fetchDatabaseFromServer() {
-    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241')
+    fetch('https://ns1.dominios.uol.com.br')
         .then(response => response.json())
         .then(data => {
             database = data; // Atualiza o banco de dados local
@@ -359,7 +359,7 @@ function fetchDatabaseFromServer() {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
+    fetch('https://ns1.dominios.uol.com.br', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
