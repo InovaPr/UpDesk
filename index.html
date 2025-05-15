@@ -356,6 +356,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchChamadosFromServer(); // Buscar chamados ao carregar a página
 });
 
+setInterval(() => {
+    fetchChamadosFromServer();
+}, 5000); // Sincronize a cada 5 segundos
+
 function sendNewTicket(ticket) {
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ tipo: 'novo_chamado', chamado: ticket }));
