@@ -937,7 +937,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://inovanet.ind.br', {
+    fetch('https://inovanet.ind.br/api/saveDatabase', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
