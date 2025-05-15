@@ -318,18 +318,17 @@
         };
 
         socket.onmessage = (event) => {
+            console.log("Mensagem recebida via WebSocket:", event.data);
             const data = JSON.parse(event.data);
 
             if (data.tipo === 'novo_chamado') {
-                // Adicionar novo chamado à tela
-                console.log('Novo chamado recebido via WebSocket:', data);
+                console.log('Novo chamado recebido:', data.chamado);
                 addNewTicket(data.chamado);
             } else if (data.tipo === 'atualizacao_chamado') {
-                // Atualizar chamado existente
-                console.log('Atualização recebida via WebSocket:', data);
+                console.log('Chamado atualizado:', data.chamado);
                 updateTicket(data.chamado);
             }
-        };
+};
 
         socket.onclose = () => {
             console.log('Conexão WebSocket fechada. Tentando reconectar...');
@@ -341,16 +340,31 @@
         };
     }
 
-    async function fetchChamadosFromServer() {
-        try {
-            const response = await fetch('https://inovanet.ind.br'); // Substitua pela URL real da API REST
-            const data = await response.json();
-            database = data; // Atualiza o banco de dados local com os dados do servidor
-            updateDatabaseTable(); // Atualiza a tabela na página
-        } catch (error) {
-            console.error('Erro ao buscar chamados do servidor:', error);
-        }
+    async function saveTicketsState() {
+    try {
+        await fetch('https://inovanet.ind.br/api/chamados', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(database), // Envie o banco de dados local para o servidor
+        });
+        console.log('Estado dos chamados salvo no servidor.');
+    } catch (error) {
+        console.error('Erro ao salvar estado no servidor:', error);
     }
+}
+
+async function fetchTicketsState() {
+    try {
+        const response = await fetch('https://inovanet.ind.br/api/chamados');
+        const data = await response.json();
+        database = data; // Atualiza o banco de dados local com os dados do servidor
+        updateDatabaseTable(); // Atualiza a tabela na interface
+    } catch (error) {
+        console.error('Erro ao buscar estado no servidor:', error);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchChamadosFromServer(); // Buscar chamados ao carregar a página
