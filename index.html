@@ -311,7 +311,7 @@
 
     function initializeWebSocket() {
         // Substitua pela URL real do WebSocket da UOL Host
-        socket = new WebSocket('wss://inovanet.ind.br/websocket');
+        socket = new WebSocket('wss://ns1.dominios.uol.com.br/websocket');
 
         socket.onopen = () => {
             console.log('Conexão WebSocket estabelecida');
@@ -342,7 +342,7 @@
 
     async function saveTicketsState() {
     try {
-        await fetch('https://inovanet.ind.br/api/chamados', {
+        await fetch('https://ns1.dominios.uol.com.br/api/chamados', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -820,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchDatabaseFromServer() {
-    return fetch('https://inovanet.ind.br/api/chamados')
+    return fetch('https://ns1.dominios.uol.com.br/api/chamados')
         .then(response => response.json())
         .then(data => {
             database = data; // Atualize a variável local com os dados do servidor
@@ -937,7 +937,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://inovanet.ind.br', {
+    fetch('https://ns1.dominios.uol.com.br', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
