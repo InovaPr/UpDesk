@@ -311,7 +311,7 @@
 
     function initializeWebSocket() {
         // Substitua pela URL real do WebSocket da UOL Host
-        socket = new WebSocket('wss://painel.inovanet.ind.br/websocket');
+        socket = new WebSocket('wss://mx.uhserver.com/websocket');
 
         socket.onopen = () => {
             console.log('Conexão WebSocket estabelecida');
@@ -343,7 +343,7 @@
 
     async function fetchChamadosFromServer() {
         try {
-            const response = await fetch('https://painel.inovanet.ind.br'); // Substitua pela URL real da API REST
+            const response = await fetch('https://mx.uhserver.com'); // Substitua pela URL real da API REST
             const data = await response.json();
             database = data; // Atualiza o banco de dados local com os dados do servidor
             updateDatabaseTable(); // Atualiza a tabela na página
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchDatabaseFromServer() {
-    return fetch('https://painel.inovanet.ind.br/api/chamados')
+    return fetch('https://mx.uhserver.com/api/chamados')
         .then(response => response.json())
         .then(data => {
             database = data; // Atualize a variável local com os dados do servidor
@@ -923,7 +923,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://painel.inovanet.ind.br/api/chamados', {
+    fetch('https://mx.uhserver.com', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
