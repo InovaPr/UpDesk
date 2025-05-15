@@ -307,174 +307,79 @@
 
 <script>
 
-    async function fetchChamadosFromServer() {
-    try {
-        const response = await fetch('https://ns1.dominios.uol.com.br'); 
-        const data = await response.json();
-        database = data; 
-        updateDatabaseTable(); 
-    } catch (error) {
-        console.error('Erro ao buscar chamados do servidor:', error);
-    }
-}
-document.addEventListener('DOMContentLoaded', () => {
-    fetchChamadosFromServer(); 
-});
+     let socket;
 
-const socket = new WebSocket('wss://https://ns1.dominios.uol.com.br/ws'); // Substitua pela URL correta do WebSockett
+    function initializeWebSocket() {
+        // Substitua pela URL real do WebSocket da UOL Host
+        socket = new WebSocket('wss://ns1.dominios.uol.com.br/websocket');
 
-// Quando o WebSocket se conectar
-socket.addEventListener('open', () => {
-    console.log('Conectado ao servidor WebSocket.');
-});
+        socket.onopen = () => {
+            console.log('Conexão WebSocket estabelecida');
+        };
 
-// Quando uma mensagem for recebida do servidor WebSocket
-socket.addEventListener('close', () => {
-    console.warn('WebSocket desconectado. Tentando reconectar...');
-    setTimeout(() => {
-        connectWebSocket(); // Função para reconectar
-    }, 5000);
-});
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
 
-const API_URL = 'https://ns1.dominios.uol.com.br';
-const WS_URL = 'wss://ns1.dominios.uol.com.br/ws';
-
-// Função para realizar login e obter token
-async function login() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-
-    try {
-        const response = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, password })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('authToken', data.token);
-            console.log('Login bem-sucedido!');
-            checkLoginState();
-        } else {
-            throw new Error('Login falhou');
-        }
-    } catch (error) {
-        console.error('Erro ao realizar login:', error);
-        document.getElementById('loginError').textContent = 'Usuário ou senha incorretos';
-    }
-}
-
-// Middleware para adicionar token a cabeçalhos de requisição
-function authHeader() {
-    const token = localStorage.getItem('authToken');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
-}
-
-// Função para sincronizar dados via WebSocket
-function setupWebSocket() {
-    const socket = new WebSocket(WS_URL);
-
-    socket.addEventListener('open', () => {
-        console.log('Conectado ao WebSocket.');
-    });
-
-    socket.addEventListener('message', event => {
-        console.log('Mensagem recebida do WebSocket:', event.data);
-        const data = JSON.parse(event.data);
-        if (data.type === 'NEW_TICKET') {
-            addNewTicket(data.ticket);
-        }
-    });
-
-    socket.addEventListener('close', () => {
-        console.warn('WebSocket desconectado. Tentando reconectar...');
-        setTimeout(setupWebSocket, 5000);
-    });
-
-    return socket;
-}
-
-// Sincronizar banco de dados via REST API
-async function fetchTickets() {
-    try {
-        const response = await fetch(`${API_URL}/tickets`, {
-            headers: {
-                ...authHeader()
+            if (data.tipo === 'novo_chamado') {
+                // Adicionar novo chamado à tela
+                console.log('Novo chamado recebido via WebSocket:', data);
+                addNewTicket(data.chamado);
+            } else if (data.tipo === 'atualizacao_chamado') {
+                // Atualizar chamado existente
+                console.log('Atualização recebida via WebSocket:', data);
+                updateTicket(data.chamado);
             }
-        });
+        };
 
-        if (response.ok) {
-            const tickets = await response.json();
-            database = tickets;
-            updateDatabaseTable();
-        } else {
-            throw new Error('Falha ao buscar dados do servidor.');
-        }
-    } catch (error) {
-        console.error('Erro ao buscar dados do servidor:', error);
+        socket.onclose = () => {
+            console.log('Conexão WebSocket fechada. Tentando reconectar...');
+            setTimeout(initializeWebSocket, 5000); // Tentar reconectar após 5 segundos
+        };
+
+        socket.onerror = (error) => {
+            console.error('Erro no WebSocket:', error);
+        };
     }
-}
 
-// Salvar novo chamado no servidor
-async function saveNewTicketToServer(ticket) {
-    try {
-        const response = await fetch(`${API_URL}/tickets`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...authHeader()
-            },
-            body: JSON.stringify(ticket)
-        });
-
-        if (response.ok) {
-            console.log('Novo chamado salvo no servidor.');
-        } else {
-            throw new Error('Falha ao salvar chamado.');
+    async function fetchChamadosFromServer() {
+        try {
+            const response = await fetch('https://sns1.dominios.uol.com.br/api/chamados'); // Substitua pela URL real da API REST
+            const data = await response.json();
+            database = data; // Atualiza o banco de dados local com os dados do servidor
+            updateDatabaseTable(); // Atualiza a tabela na página
+        } catch (error) {
+            console.error('Erro ao buscar chamados do servidor:', error);
         }
-    } catch (error) {
-        console.error('Erro ao salvar chamado:', error);
     }
-}
 
-function saveNewTicketToServer(ticket) {
-    fetch('https://ns1.dominios.uol.com.br', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticket) // Enviar o novo chamado para o servidor
-    }).then(() => {
-        console.log('Novo chamado salvo no servidor.');
-    }).catch(error => console.error('Erro ao salvar chamado no servidor:', error));
-}
+document.addEventListener('DOMContentLoaded', () => {
+    fetchChamadosFromServer(); // Buscar chamados ao carregar a página
+});
 
-function fetchDatabaseFromServer() {
-    fetch('https://ns1.dominios.uol.com.br')
-        .then(response => response.json())
-        .then(data => {
-            database = data; // Atualiza o banco de dados local
-            updateDatabaseTable(); // Atualiza a tabela de chamados na interface
-        })
-        .catch(error => console.error('Erro ao buscar dados do servidor:', error));
-}
+function sendNewTicket(ticket) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ tipo: 'novo_chamado', chamado: ticket }));
+        } else {
+            console.error('Conexão WebSocket não está aberta. Chamado não enviado.');
+        }
+    }
 
-function saveDatabaseToServer() {
-    fetch('https://ns1.dominios.uol.com.br', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(database), // Envie o banco de dados local para o servidor
-    }).then(() => {
-        console.log('Dados salvos no servidor.');
-    }).catch(error => console.error('Erro ao salvar dados no servidor:', error));
-}
 
-setInterval(fetchDatabaseFromServer, 5000);
+ function updateTicket(ticket) {
+        const ticketDiv = document.querySelector(`[data-ticket-id="${ticket.id}"]`);
+        if (ticketDiv) {
+            // Atualize os campos necessários no ticketDiv
+            console.log('Chamado atualizado:', ticket);
+        } else {
+            console.error('Chamado não encontrado para atualização:', ticket);
+        }
+    }
+
+    // Inicializar WebSocket e buscar dados iniciais
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeWebSocket();
+        fetchChamadosFromServer();
+    });
 
 function renderGraphs() {
     const customerFilterPie = document.getElementById('customerFilterPie').value;
@@ -1014,7 +919,7 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 function saveDatabaseToServer() {
-    fetch('https://painelhospedagem.uol.com.br/administracao-site/index.html?idtInscription=165503588&idtSite=867241', {
+    fetch('https://ns1.dominios.uol.com.br/api/chamados', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1028,16 +933,16 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDatabaseFromServer(); // Buscar os dados ao carregar a página
 });
 
-function addNewTicket(ticket = {}) {
-    const ticketList = document.getElementById('ticketList');
-    if (!ticketList) {
-        console.error('Ticket list container not found');
-        return;
-    }
+ function addNewTicket(ticket = {}) {
+        const ticketList = document.getElementById('ticketList');
+        if (!ticketList) {
+            console.error('Ticket list container not found');
+            return;
+        }
 
-    const ticketDiv = document.createElement('div');
-    ticketDiv.className = 'ticket-row';
-    ticketDiv.dataset.ticketId = Date.now(); // Unique identifier for the ticket
+        const ticketDiv = document.createElement('div');
+        ticketDiv.className = 'ticket-row';
+        ticketDiv.dataset.ticketId = Date.now(); // Unique identifier for the ticket
 
     const fields = {
         tempo_previsto: document.createElement('input'),
@@ -1124,6 +1029,8 @@ function addNewTicket(ticket = {}) {
     ticketDiv.appendChild(timerDisplay);
     ticketDiv.appendChild(buttonContainer);
     ticketList.appendChild(ticketDiv);
+
+    sendNewTicket(ticket);
 
     // If the ticket's timer was running, restore it
     if (ticket.timerState === 'running') {
