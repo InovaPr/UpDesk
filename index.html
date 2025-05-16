@@ -392,10 +392,6 @@ function archiveTicket(ticketDiv) {
         alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
         return;
     }
-
- // <-- ESTE TAMBÉM
-
-    // ... (remove ticket da tela, atualiza tabela, etc.)
 }
 
 function sendNewTicket(ticket) {
@@ -907,111 +903,30 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDatabaseFromServer(); // Buscar os dados ao carregar a página
 });
 
- function addNewTicket(ticket = {}) {
-        const ticketList = document.getElementById('ticketList');
-        if (!ticketList) {
-            console.error('Ticket list container not found');
-            return;
-        }
+async function addNewTicket() {
+    const tempo_previsto = document.getElementById('tempo_previsto').value;
+    const cliente = document.getElementById('CLIENTE').value;
+    const problema = document.getElementById('PROBLEMA').value;
+    const operador = document.getElementById('OPERADOR').value;
+    const executor = document.getElementById('EXECUTOR').value;
 
-        const ticketDiv = document.createElement('div');
-        ticketDiv.className = 'ticket-row';
-        ticketDiv.dataset.ticketId = Date.now(); // Unique identifier for the ticket
-
-    const fields = {
-        tempo_previsto: document.createElement('input'),
-        CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
-        PROBLEMA: createSelect(problemas, 'PROBLEMA'),
-        OPERADOR: createSelect(operadores, 'OPERADOR'),
-        EXECUTOR: createSelect(executores, 'EXECUTOR'),
-        hora_inicio: document.createElement('input'),
-        data_abertura: document.createElement('input'),
-        hora_fim: document.createElement('input')
-    };
-
-    fields.tempo_previsto.type = 'text';
-    fields.tempo_previsto.className = 'input-time';
-    fields.tempo_previsto.placeholder = 'H:M:S';
-    fields.tempo_previsto.value = ticket.tempo_previsto || '';
-
-    fields.tempo_previsto.addEventListener('input', function (e) {
-        e.target.value = e.target.value.replace(/[^0-9:]/g, ''); // Allow only numbers and colons
-    });
-
-    fields.tempo_previsto.addEventListener('blur', function (e) {
-        if (e.target.value) {
-            let parts = e.target.value.split(':');
-            parts = parts.map(part => part.padStart(2, '0'));
-            while (parts.length < 3) parts.push('00'); // Ensure HH:MM:SS format
-            e.target.value = parts.slice(0, 3).join(':');
-        }
-    });
-
-    fields.hora_inicio.readOnly = true;
-    fields.hora_inicio.id = 'hora_inicio';
-    fields.hora_inicio.value = ticket.hora_inicio || '';
-
-    fields.data_abertura.readOnly = true;
-    fields.data_abertura.id = 'data_abertura';
-    fields.data_abertura.value = ticket.data_abertura || '';
-
-    fields.hora_fim.readOnly = true;
-    fields.hora_fim.id = 'hora_fim';
-    fields.hora_fim.value = ticket.hora_fim || '';
-
-    fields.CLIENTE.value = ticket.cliente || '';
-    fields.PROBLEMA.value = ticket.problema || '';
-    fields.OPERADOR.value = ticket.operador || '';
-    fields.EXECUTOR.value = ticket.executor || '';
-
-    Object.entries(fields).forEach(([key, field]) => {
-        const label = document.createElement('label');
-        label.textContent = {
-            tempo_previsto: 'TEMPO PREVISTO:',
-            hora_inicio: 'HORA DE INÍCIO:',
-            data_abertura: 'DATA DE ABERTURA:',
-            hora_fim: 'HORA FINAL:'
-        }[key] || key.toUpperCase() + ':';
-        ticketDiv.appendChild(label);
-        ticketDiv.appendChild(field);
-    });
-
-    const timerDisplay = document.createElement('div');
-    timerDisplay.className = 'timer';
-    const timerType = ticket.timerType || 'T';
-    const accumulatedTime = parseInt(ticket.accumulatedTime, 10) || 0;
-    updateTimerDisplay(timerDisplay, accumulatedTime, timerType);
-    ticketDiv.setAttribute('data-timer-type', timerType);
-    ticketDiv.setAttribute('data-timer-state', ticket.timerState || 'stopped');
-    ticketDiv.setAttribute('data-accumulated-time', accumulatedTime.toString());
-    ticketDiv.setAttribute('data-start-time', ticket.startTime || '');
-
-    const buttonContainer = document.createElement('div');
-    const buttonActions = [
-        { icon: 'fas fa-play', handler: 'iniciar' },
-        { icon: 'fas fa-archive', handler: 'arquivar' },
-        { icon: 'fas fa-comment', handler: 'comentar' }
-    ];
-
-    buttonActions.forEach(({ icon, handler }) => {
-        const button = document.createElement('button');
-        button.innerHTML = `<i class="${icon}"></i>`;
-        button.onclick = () => handleTicketAction(handler, ticketDiv);
-        buttonContainer.appendChild(button);
-    });
-
-    ticketDiv.appendChild(timerDisplay);
-    ticketDiv.appendChild(buttonContainer);
-    ticketList.appendChild(ticketDiv);
-
-    sendNewTicket(ticket);
-
-    // If the ticket's timer was running, restore it
-    if (ticket.timerState === 'running') {
-        startTimer(ticketDiv, accumulatedTime);
+    if (!cliente || !problema || !operador || !executor) {
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
     }
 
-    saveTicketsState(); // Save the updated state of tickets
+    const ticket = {
+        tempo_previsto,
+        cliente,
+        problema,
+        operador,
+        executor,
+        data_abertura: new Date().toLocaleString(),
+        status_prazo: 'No Prazo'
+    };
+
+    await addTicket(ticket);
+    await fetchTicketsFromServer();
 }
 
 
@@ -1260,14 +1175,6 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 
-        function showDatabase() {
-            const databaseView = document.getElementById('databaseView');
-            databaseView.style.display = databaseView.style.display === 'none' ? 'block' : 'none';
-            if (databaseView.style.display ==='block') {
-                updateDatabaseTable();
-            }
-        }
-
 
 function applyFilters() {
     const filterDateRange = document.getElementById('filterDateRange').value;
@@ -1313,7 +1220,6 @@ function applyFilters() {
         endDate
     };
 
-    updateDatabaseTable(filters);
 }
 
 function parseDateTimeStr(dateTimeStr) {
@@ -1352,8 +1258,7 @@ function formatDateTime(date) {
 function clearDatabase() {
     if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
         database = [];
-        saveDatabaseToServer(); // Atualize o servidor
-        updateDatabaseTable();
+
     }
 }
 
