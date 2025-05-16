@@ -374,6 +374,21 @@ setInterval(() => {
     fetchChamadosFromServer();
 }, 5000); // Sincronize a cada 5 segundos
 
+function archiveTicket(ticketDiv) {
+    // ... (coleta dados do chamado)
+    const ticket = { /* ...dados do chamado... */ };
+
+    if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+        alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+        return;
+    }
+
+    database.push(ticket); // <-- ESTE É O LOCAL DO CÓDIGO
+    localStorage.setItem('ticketDatabase', JSON.stringify(database)); // <-- ESTE TAMBÉM
+
+    // ... (remove ticket da tela, atualiza tabela, etc.)
+}
+
 function sendNewTicket(ticket) {
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ tipo: 'novo_chamado', chamado: ticket }));
@@ -903,8 +918,6 @@ function archiveTicket(ticketDiv) {
             return;
         }
 
-        database.push(ticket);
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
 
         if (timers.has(ticketDiv)) {
             clearInterval(timers.get(ticketDiv));
