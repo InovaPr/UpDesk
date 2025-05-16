@@ -871,72 +871,7 @@ function downloadCommentsAsExcel() {
     XLSX.writeFile(wb, 'Comments.xlsx');
 }
 
-function archiveTicket(ticketDiv) {
-    validatePasswordAndExecute((username) => {
-        const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
-        const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
-        const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value;
-        const horaFim = new Date().toLocaleTimeString();
-        const dataEncerramento = new Date().toLocaleDateString();
 
-        const dataHoraAbertura = `${dataAbertura} ${horaInicio}`;
-        
-        // Correctly calculate the accumulated execution time
-        const startTime = parseDateTimeStr(dataHoraAbertura).getTime(); // Convert start time to timestamp
-        const endTime = new Date(`${dataEncerramento} ${horaFim}`).getTime(); // Convert end time to timestamp
-        const accumulatedTime = endTime - startTime; // Calculate total time in milliseconds
-        const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
-
-        const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
-        const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
-
-        let statusPrazo;
-        const timerType = ticketDiv.getAttribute('data-timer-type');
-        if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
-            statusPrazo = 'No Prazo';
-        } else {
-            statusPrazo = 'Fora do Prazo';
-        }
-
-        const ticket = {
-            tempo_previsto: tempoPrevisto,
-            cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
-            problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
-            operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
-            executor: ticketDiv.querySelector('select[id="EXECUTOR"]').value,
-            data_hora_abertura: dataHoraAbertura,
-            hora_fim: `${dataEncerramento} ${horaFim}`,
-            arquivado_por: username,
-            inicio: dataHoraAbertura,
-            fim: `${dataEncerramento} ${horaFim}`,
-            tempo_decorrido: tempoDecorrido, // Correctly calculated execution time
-            status_prazo: statusPrazo
-        };
-
-        if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
-            alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
-            return;
-        }
-
-
-        if (timers.has(ticketDiv)) {
-            clearInterval(timers.get(ticketDiv));
-            timers.delete(ticketDiv);
-        }
-
-        ticketDiv.remove();
-
-        const databaseView = document.getElementById('databaseView');
-        if (databaseView.style.display === 'block') {
-            updateDatabaseTable();
-        }
-
-        alert(`Chamado arquivado com sucesso!\n
-            Data de abertura: ${dataAbertura} Hora de abertura: ${horaInicio}\n
-            Data de encerramento: ${dataEncerramento} Hora de encerramento: ${horaFim}\n
-            Tempo de execução: ${tempoDecorrido}`);
-    });
-}
 
 const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
 
@@ -1178,6 +1113,8 @@ function updateTimerDisplay(display, time, prefix) {
     const seconds = time % 60;
     display.textContent = `${prefix}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
+
+
 function updateTicketColor(ticketDiv, percentage) {
     ticketDiv.className = 'ticket-row';
     if (percentage > 0.75) {
