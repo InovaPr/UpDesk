@@ -355,16 +355,26 @@
     }
 }
 
-async function fetchTicketsState() {
-    try {
-        const response = await fetch('https://inovanet.ind.br/api/chamados');
-        const data = await response.json();
-        database = data; // Atualiza o banco de dados local com os dados do servidor
-        updateDatabaseTable(); // Atualiza a tabela na interface
-    } catch (error) {
-        console.error('Erro ao buscar estado no servidor:', error);
-    }
+const API_URL = 'https://inovanet.ind.br/api/chamados';
+// SEM localStorage para o banco principal!
+
+async function addTicket(ticket) {
+    await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticket)
+    });
+    fetchTicketsFromServer();
 }
+
+async function fetchTicketsFromServer() {
+    const res = await fetch(API_URL);
+    const tickets = await res.json();
+    renderTickets(tickets);
+}
+
+// Chame addTicket() ao criar/arquivar, e NUNCA salve no localStorage
+
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchChamadosFromServer(); // Buscar chamados ao carregar a página
@@ -383,8 +393,7 @@ function archiveTicket(ticketDiv) {
         return;
     }
 
-    database.push(ticket); // <-- ESTE É O LOCAL DO CÓDIGO
-    localStorage.setItem('ticketDatabase', JSON.stringify(database)); // <-- ESTE TAMBÉM
+ // <-- ESTE TAMBÉM
 
     // ... (remove ticket da tela, atualiza tabela, etc.)
 }
@@ -620,7 +629,7 @@ function downloadGraphsAsWord() {
 function clearDatabase() {
     if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
         database = [];
-        localStorage.setItem('ticketDatabase', JSON.stringify(database));
+
         updateDatabaseTable();
     }
 }
@@ -716,7 +725,7 @@ function updateDatabaseTable(filters = {}) {
     const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43", "43",
 
 ]
-    let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
+
     let timers = new Map();
     let accumulatedTimes = new Map();
 
@@ -870,7 +879,6 @@ function downloadCommentsAsExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "Comments");
     XLSX.writeFile(wb, 'Comments.xlsx');
 }
-
 
 
 const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
