@@ -157,7 +157,7 @@
 
    <div id="mainContainer">
     <h1>Sistema de Acompanhamento de Chamados</h1>
-    <button onclick="criarENovoChamado()">Adicionar Novo Chamado</button>
+    <button onclick="addNewTicket()">Adicionar Novo Chamado</button>
     <button onclick="showDatabase()">Visualizar Chamados</button>
     <button onclick="showGraphs()">Visualizar Graficos</button>
     <button onclick="logout()">Logout</button> <!-- Add this line -->
@@ -306,7 +306,7 @@
 </div>
 
 <script>
-     let database = [];
+
      let socket;
 
     function initializeWebSocket() {
@@ -355,60 +355,19 @@
     }
 }
 
-const API_URL = 'https://inovanet.ind.br/api/chamados';
-// SEM localStorage para o banco principal!
-
-async function addTicket(ticket) {
-    await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticket)
-    });
-    await fetchChamadosFromServer(); // Recarrega todos os chamados após adicionar
-}
-
-
-async function fetchChamadosFromServer() {
+async function fetchTicketsState() {
     try {
-        const res = await fetch('https://inovanet.ind.br/api/chamados');
-        const tickets = await res.json();
-        database = tickets; // Atualiza a variável global
-        renderTickets(tickets); // Renderiza os chamados ativos
+        const response = await fetch('https://inovanet.ind.br/api/chamados');
+        const data = await response.json();
+        database = data; // Atualiza o banco de dados local com os dados do servidor
+        updateDatabaseTable(); // Atualiza a tabela na interface
     } catch (error) {
-        console.error('Erro ao buscar chamados do servidor:', error);
+        console.error('Erro ao buscar estado no servidor:', error);
     }
 }
 
-flatpickr("#filterDateRange", {
-        mode: "range",
-        dateFormat: "d/m/Y",
-        locale: "pt",
-        onChange: function(selectedDates, dateStr, instance) {
-            console.log('Datas selecionadas:', dateStr);
-        }
-    });
-    
-    // Se estiver usando WebSocket, inicialize também
-    initializeWebSocket();
-// Chame addTicket() ao criar/arquivar, e NUNCA salve no localStorage
-
-
 document.addEventListener('DOMContentLoaded', () => {
-    checkLoginState();
-    flatpickr("#filterDateRange", {
-        mode: "range",
-        dateFormat: "d/m/Y",
-        locale: "pt",
-        onChange: function(selectedDates, dateStr, instance) {
-            console.log('Datas selecionadas:', dateStr);
-        }
-    });
-
-    // CHAME SEMPRE que a página carregar:
-    fetchChamadosFromServer();
-
-    // Se usar WebSocket, inicialize também
-    initializeWebSocket();
+    fetchChamadosFromServer(); // Buscar chamados ao carregar a página
 });
 
 setInterval(() => {
@@ -423,84 +382,11 @@ function archiveTicket(ticketDiv) {
         alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
         return;
     }
-}
 
-function criarENovoChamado() {
-    // Cria os campos na tela normalmente
-    addNewTicket();
+    database.push(ticket); // <-- ESTE É O LOCAL DO CÓDIGO
+    localStorage.setItem('ticketDatabase', JSON.stringify(database)); // <-- ESTE TAMBÉM
 
-    // Aguarda um pequeno tempo para os campos aparecerem (importante para DOM)
-    setTimeout(() => {
-        // Pegue o último ticketDiv criado (o último .ticket-row)
-        const ticketDiv = document.querySelectorAll('.ticket-row');
-        const novoDiv = ticketDiv[ticketDiv.length - 1];
-
-        // Pegue os campos
-        const tempo_previsto = novoDiv.querySelector('input.input-time').value;
-        const cliente = novoDiv.querySelector('select#CLIENTE').value;
-        const problema = novoDiv.querySelector('select#PROBLEMA').value;
-        const operador = novoDiv.querySelector('select#OPERADOR').value;
-        const executor = novoDiv.querySelector('select#EXECUTOR').value;
-        const hora_inicio = novoDiv.querySelector('input#hora_inicio').value;
-        const data_abertura = novoDiv.querySelector('input#data_abertura').value;
-        const hora_fim = novoDiv.querySelector('input#hora_fim').value;
-
-        // Crie o ticket com os valores preenchidos (ou vazios se não houver)
-        const ticketToSave = {
-            tempo_previsto,
-            cliente,
-            problema,
-            operador,
-            executor,
-            hora_inicio,
-            data_abertura,
-            hora_fim,
-            timerType: novoDiv.getAttribute('data-timer-type') || 'T',
-            timerState: novoDiv.getAttribute('data-timer-state') || 'stopped',
-            accumulatedTime: novoDiv.getAttribute('data-accumulated-time') || '0',
-            startTime: novoDiv.getAttribute('data-start-time') || ''
-        };
-        addTicket(ticketToSave); // Salva no backend imediatamente!
-    }, 100); // tempo mínimo para garantir renderização do DOM
-}
-
-function criarENovoChamado() {
-    // Cria os campos na tela normalmente
-    addNewTicket();
-
-    // Aguarda um pequeno tempo para os campos aparecerem (importante para DOM)
-    setTimeout(() => {
-        // Pegue o último ticketDiv criado (o último .ticket-row)
-        const ticketDiv = document.querySelectorAll('.ticket-row');
-        const novoDiv = ticketDiv[ticketDiv.length - 1];
-
-        // Pegue os campos
-        const tempo_previsto = novoDiv.querySelector('input.input-time').value;
-        const cliente = novoDiv.querySelector('select#CLIENTE').value;
-        const problema = novoDiv.querySelector('select#PROBLEMA').value;
-        const operador = novoDiv.querySelector('select#OPERADOR').value;
-        const executor = novoDiv.querySelector('select#EXECUTOR').value;
-        const hora_inicio = novoDiv.querySelector('input#hora_inicio').value;
-        const data_abertura = novoDiv.querySelector('input#data_abertura').value;
-        const hora_fim = novoDiv.querySelector('input#hora_fim').value;
-
-        // Crie o ticket com os valores preenchidos (ou vazios se não houver)
-        const ticketToSave = {
-            tempo_previsto,
-            cliente,
-            problema,
-            operador,
-            executor,
-            hora_inicio,
-            data_abertura,
-            hora_fim,
-            timerType: novoDiv.getAttribute('data-timer-type') || 'T',
-            timerState: novoDiv.getAttribute('data-timer-state') || 'stopped',
-            accumulatedTime: novoDiv.getAttribute('data-accumulated-time') || '0',
-            startTime: novoDiv.getAttribute('data-start-time') || ''
-        };
-        addTicket(ticketToSave); // Salva no backend imediatamente!
-    }, 100); // tempo mínimo para garantir renderização do DOM
+    // ... (remove ticket da tela, atualiza tabela, etc.)
 }
 
 function sendNewTicket(ticket) {
@@ -510,17 +396,6 @@ function sendNewTicket(ticket) {
             console.error('Conexão WebSocket não está aberta. Chamado não enviado.');
         }
     }
-
-function renderTickets(tickets) {
-    const ticketList = document.getElementById('ticketList');
-    if (!ticketList) return;
-    ticketList.innerHTML = '';
-    tickets.forEach(ticket => {
-        if (!ticket.arquivado) {
-            addNewTicket(ticket); // Só renderiza, NÃO chama addTicket aqui!
-        }
-    });
-}
 
 
  function updateTicket(ticket) {
@@ -534,11 +409,10 @@ function renderTickets(tickets) {
     }
 
     // Inicializar WebSocket e buscar dados iniciais
-document.addEventListener('DOMContentLoaded', () => {
-    checkLoginState();
-    fetchChamadosFromServer(); // Isso já está correto!
-    initializeWebSocket();
-});
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeWebSocket();
+        fetchChamadosFromServer();
+    });
 
 function renderGraphs() {
     const customerFilterPie = document.getElementById('customerFilterPie').value;
@@ -746,7 +620,7 @@ function downloadGraphsAsWord() {
 function clearDatabase() {
     if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
         database = [];
-
+        localStorage.setItem('ticketDatabase', JSON.stringify(database));
         updateDatabaseTable();
     }
 }
@@ -842,7 +716,7 @@ function updateDatabaseTable(filters = {}) {
     const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43", "43",
 
 ]
-
+    let database = JSON.parse(localStorage.getItem('ticketDatabase')) || [];
     let timers = new Map();
     let accumulatedTimes = new Map();
 
@@ -896,6 +770,70 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+function saveTicketsState() {
+    const ticketList = document.getElementById('ticketList');
+    const tickets = [];
+    
+    ticketList.querySelectorAll('.ticket-row').forEach(ticketDiv => {
+        const ticket = {
+            tempo_previsto: ticketDiv.querySelector('input[type="text"]').value,
+            cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
+            problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
+            operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
+            executor: ticketDiv.querySelector('select[id="EXECUTOR"]').value,
+            hora_inicio: ticketDiv.querySelector('input[id="hora_inicio"]').value,
+            data_abertura: ticketDiv.querySelector('input[id="data_abertura"]').value,
+            hora_fim: ticketDiv.querySelector('input[id="hora_fim"]').value,
+            timerState: ticketDiv.getAttribute('data-timer-state'),
+            timerType: ticketDiv.getAttribute('data-timer-type'),
+            accumulatedTime: ticketDiv.getAttribute('data-accumulated-time'),
+            startTime: ticketDiv.getAttribute('data-start-time')
+        };
+        tickets.push(ticket);
+    });
+    
+    localStorage.setItem('openTickets', JSON.stringify(tickets));
+}
+
+function loadTicketsState() {
+    const tickets = JSON.parse(localStorage.getItem('openTickets')) || [];
+    tickets.forEach(ticket => {
+        addNewTicket(ticket);
+
+        if (ticket.timerState === 'running') {
+            const ticketDiv = document.querySelector(`#ticketList .ticket-row:last-child`);
+            if (ticketDiv) {
+                const startTime = parseInt(ticket.startTime);
+                const accumulatedTime = parseInt(ticket.accumulatedTime) || 0;
+                const elapsedTime = (Date.now() - startTime) / 1000;
+
+                let timeLeft;
+                if (ticket.timerType === 'T') {
+                    timeLeft = timeToSeconds(ticket.tempo_previsto) - elapsedTime - accumulatedTime;
+                } else {
+                    timeLeft = accumulatedTime + elapsedTime;
+                }
+
+                startTimer(ticketDiv, timeLeft);
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkLoginState();
+    loadTicketsState(); 
+
+    flatpickr("#filterDateRange", {
+        mode: "range",
+        dateFormat: "d/m/Y",
+        locale: "pt",
+        onChange: function(selectedDates, dateStr, instance) {
+            console.log('Datas selecionadas:', dateStr);
+        }
+    });
+});
+
 function fetchDatabaseFromServer() {
     return fetch('https://inovanet.ind.br/api/chamados')
         .then(response => response.json())
@@ -933,6 +871,72 @@ function downloadCommentsAsExcel() {
     XLSX.writeFile(wb, 'Comments.xlsx');
 }
 
+function archiveTicket(ticketDiv) {
+    validatePasswordAndExecute((username) => {
+        const tempoPrevisto = ticketDiv.querySelector('input[type="text"]').value;
+        const horaInicio = ticketDiv.querySelector('input[id="hora_inicio"]').value;
+        const dataAbertura = ticketDiv.querySelector('input[id="data_abertura"]').value;
+        const horaFim = new Date().toLocaleTimeString();
+        const dataEncerramento = new Date().toLocaleDateString();
+
+        const dataHoraAbertura = `${dataAbertura} ${horaInicio}`;
+        
+        // Correctly calculate the accumulated execution time
+        const startTime = parseDateTimeStr(dataHoraAbertura).getTime(); // Convert start time to timestamp
+        const endTime = new Date(`${dataEncerramento} ${horaFim}`).getTime(); // Convert end time to timestamp
+        const accumulatedTime = endTime - startTime; // Calculate total time in milliseconds
+        const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
+
+        const tempoPrevistoSeconds = timeToSeconds(tempoPrevisto);
+        const tempoDecorridoSeconds = timeToSeconds(tempoDecorrido);
+
+        let statusPrazo;
+        const timerType = ticketDiv.getAttribute('data-timer-type');
+        if (timerType === 'T' && tempoDecorridoSeconds <= tempoPrevistoSeconds) {
+            statusPrazo = 'No Prazo';
+        } else {
+            statusPrazo = 'Fora do Prazo';
+        }
+
+        const ticket = {
+            tempo_previsto: tempoPrevisto,
+            cliente: ticketDiv.querySelector('select[id="CLIENTE"]').value,
+            problema: ticketDiv.querySelector('select[id="PROBLEMA"]').value,
+            operador: ticketDiv.querySelector('select[id="OPERADOR"]').value,
+            executor: ticketDiv.querySelector('select[id="EXECUTOR"]').value,
+            data_hora_abertura: dataHoraAbertura,
+            hora_fim: `${dataEncerramento} ${horaFim}`,
+            arquivado_por: username,
+            inicio: dataHoraAbertura,
+            fim: `${dataEncerramento} ${horaFim}`,
+            tempo_decorrido: tempoDecorrido, // Correctly calculated execution time
+            status_prazo: statusPrazo
+        };
+
+        if (!ticket.cliente || !ticket.problema || !ticket.operador || !ticket.executor) {
+            alert('Por favor, preencha todos os campos obrigatórios antes de arquivar.');
+            return;
+        }
+
+
+        if (timers.has(ticketDiv)) {
+            clearInterval(timers.get(ticketDiv));
+            timers.delete(ticketDiv);
+        }
+
+        ticketDiv.remove();
+
+        const databaseView = document.getElementById('databaseView');
+        if (databaseView.style.display === 'block') {
+            updateDatabaseTable();
+        }
+
+        alert(`Chamado arquivado com sucesso!\n
+            Data de abertura: ${dataAbertura} Hora de abertura: ${horaInicio}\n
+            Data de encerramento: ${dataEncerramento} Hora de encerramento: ${horaFim}\n
+            Tempo de execução: ${tempoDecorrido}`);
+    });
+}
 
 const tempoDecorrido = calculateTotalTimeFromMilliseconds(accumulatedTime); // Format as H:M:S
 
@@ -960,16 +964,16 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDatabaseFromServer(); // Buscar os dados ao carregar a página
 });
 
-function addNewTicket(ticket = {}) {
-    const ticketList = document.getElementById('ticketList');
-    if (!ticketList) {
-        console.error('Ticket list container not found');
-        return;
-    }
+ function addNewTicket(ticket = {}) {
+        const ticketList = document.getElementById('ticketList');
+        if (!ticketList) {
+            console.error('Ticket list container not found');
+            return;
+        }
 
-    const ticketDiv = document.createElement('div');
-    ticketDiv.className = 'ticket-row';
-    ticketDiv.dataset.ticketId = ticket.id || Date.now();
+        const ticketDiv = document.createElement('div');
+        ticketDiv.className = 'ticket-row';
+        ticketDiv.dataset.ticketId = Date.now(); // Unique identifier for the ticket
 
     const fields = {
         tempo_previsto: document.createElement('input'),
@@ -982,7 +986,40 @@ function addNewTicket(ticket = {}) {
         hora_fim: document.createElement('input')
     };
 
-    // ... (configurações dos campos)
+    fields.tempo_previsto.type = 'text';
+    fields.tempo_previsto.className = 'input-time';
+    fields.tempo_previsto.placeholder = 'H:M:S';
+    fields.tempo_previsto.value = ticket.tempo_previsto || '';
+
+    fields.tempo_previsto.addEventListener('input', function (e) {
+        e.target.value = e.target.value.replace(/[^0-9:]/g, ''); // Allow only numbers and colons
+    });
+
+    fields.tempo_previsto.addEventListener('blur', function (e) {
+        if (e.target.value) {
+            let parts = e.target.value.split(':');
+            parts = parts.map(part => part.padStart(2, '0'));
+            while (parts.length < 3) parts.push('00'); // Ensure HH:MM:SS format
+            e.target.value = parts.slice(0, 3).join(':');
+        }
+    });
+
+    fields.hora_inicio.readOnly = true;
+    fields.hora_inicio.id = 'hora_inicio';
+    fields.hora_inicio.value = ticket.hora_inicio || '';
+
+    fields.data_abertura.readOnly = true;
+    fields.data_abertura.id = 'data_abertura';
+    fields.data_abertura.value = ticket.data_abertura || '';
+
+    fields.hora_fim.readOnly = true;
+    fields.hora_fim.id = 'hora_fim';
+    fields.hora_fim.value = ticket.hora_fim || '';
+
+    fields.CLIENTE.value = ticket.cliente || '';
+    fields.PROBLEMA.value = ticket.problema || '';
+    fields.OPERADOR.value = ticket.operador || '';
+    fields.EXECUTOR.value = ticket.executor || '';
 
     Object.entries(fields).forEach(([key, field]) => {
         const label = document.createElement('label');
@@ -994,8 +1031,6 @@ function addNewTicket(ticket = {}) {
         }[key] || key.toUpperCase() + ':';
         ticketDiv.appendChild(label);
         ticketDiv.appendChild(field);
-        // Preenche os campos se ticket já tiver dados
-        if (ticket[key]) field.value = ticket[key];
     });
 
     const timerDisplay = document.createElement('div');
@@ -1026,46 +1061,16 @@ function addNewTicket(ticket = {}) {
     ticketDiv.appendChild(buttonContainer);
     ticketList.appendChild(ticketDiv);
 
-    // ===== CORREÇÃO PRINCIPAL =====
+    sendNewTicket(ticket);
 
-    // Só salva no backend se NÃO estiver renderizando um ticket já existente do backend
-    if (!ticket.id) {
-        // Cria um botão para salvar o chamado APÓS preencher os campos
-        const salvarBtn = document.createElement('button');
-        salvarBtn.textContent = 'Salvar Chamado';
-        salvarBtn.onclick = function() {
-            // Cria o objeto ticket com os valores dos campos preenchidos
-            const ticketToSave = {
-                tempo_previsto: fields.tempo_previsto.value,
-                cliente: fields.CLIENTE.value,
-                problema: fields.PROBLEMA.value,
-                operador: fields.OPERADOR.value,
-                executor: fields.EXECUTOR.value,
-                hora_inicio: fields.hora_inicio.value,
-                data_abertura: fields.data_abertura.value,
-                hora_fim: fields.hora_fim.value,
-                timerType: ticketDiv.getAttribute('data-timer-type'),
-                timerState: ticketDiv.getAttribute('data-timer-state'),
-                accumulatedTime: ticketDiv.getAttribute('data-accumulated-time'),
-                startTime: ticketDiv.getAttribute('data-start-time')
-            };
-            addTicket(ticketToSave); // Salva no backend
-            salvarBtn.disabled = true; // Desabilita para não salvar duplicado
-        };
-        ticketDiv.appendChild(salvarBtn);
-    }
-    // ===== FIM DA CORREÇÃO PRINCIPAL =====
-
+    // If the ticket's timer was running, restore it
     if (ticket.timerState === 'running') {
         startTimer(ticketDiv, accumulatedTime);
     }
 
-    // Não chame saveTicketsState() ao renderizar tickets do backend!
-    if (!ticket.id) {
-        saveTicketsState();
-    }
+    saveTicketsState(); // Save the updated state of tickets
 }
-// ticketToSave deve ser um objeto com todos os campos do chamado preenchidos
+
 
 // Ensure the function parseDateTimeStr is correctly implemented
 function parseDateTimeStr(dateTimeStr) {
@@ -1312,6 +1317,14 @@ function calculateTotalTimeFromMilliseconds(ms) {
 }
 
 
+        function showDatabase() {
+            const databaseView = document.getElementById('databaseView');
+            databaseView.style.display = databaseView.style.display === 'none' ? 'block' : 'none';
+            if (databaseView.style.display ==='block') {
+                updateDatabaseTable();
+            }
+        }
+
 
 function applyFilters() {
     const filterDateRange = document.getElementById('filterDateRange').value;
@@ -1355,11 +1368,9 @@ function applyFilters() {
         operador: filterOperador, // Add this line
         startDate,
         endDate
-
     };
 
     updateDatabaseTable(filters);
-
 }
 
 function parseDateTimeStr(dateTimeStr) {
@@ -1398,7 +1409,8 @@ function formatDateTime(date) {
 function clearDatabase() {
     if (confirm('Tem certeza que deseja limpar o banco de dados?')) {
         database = [];
-
+        saveDatabaseToServer(); // Atualize o servidor
+        updateDatabaseTable();
     }
 }
 
