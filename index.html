@@ -372,7 +372,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 setInterval(() => {
     fetchChamadosFromServer();
-}, 5000); // Sincronize a cada 5 segundos
+}, 5000); 
+
+async function saveOpenTicketToServer(ticket) {
+  await fetch('https://inovanet.ind.br/api/chamados_abertos', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(ticket)
+  });
+}
+async function fetchOpenTicketsFromServer() {
+  const res = await fetch('https://inovanet.ind.br/api/chamados_abertos');
+  const openTickets = await res.json();
+  openTickets.forEach(ticket => addNewTicket(ticket));
+}
 
 function archiveTicket(ticketDiv) {
     // ... (coleta dados do chamado)
@@ -707,10 +720,9 @@ function updateDatabaseTable(filters = {}) {
         ["Kaline", "123123"],
         ["Virgilio", "123123"],
         ["James", "123123"],
-        ["Marcelo", "123123"]
     ];
 
-    const operadores = ["", "Castelo", "Marcelo", "kaline", "Gabriel", "Jefferson"];
+    const operadores = ["", "Castelo","kaline", "Gabriel", "Jefferson"];
     const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
     const problemas = ["","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia",,];
     const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43", "43",
@@ -791,12 +803,9 @@ function saveTicketsState() {
         };
         tickets.push(ticket);
     });
-    
-    localStorage.setItem('openTickets', JSON.stringify(tickets));
 }
 
 function loadTicketsState() {
-    const tickets = JSON.parse(localStorage.getItem('openTickets')) || [];
     tickets.forEach(ticket => {
         addNewTicket(ticket);
 
