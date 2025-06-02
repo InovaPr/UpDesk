@@ -71,6 +71,29 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
+        .ticket-row.compact {
+    /* Diminui o padding e altura para caber só os botões e o timer */
+    padding: 5px 10px;
+    min-height: 0;
+    height: auto;
+    grid-template-columns: unset;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+.button-container.compact {
+    flex-direction: row !important;
+    gap: 3px;
+}
+
+.button-container {
+    display: flex;
+    gap: 5px;
+    flex-direction: row;
+    align-items: center;
+}
+
         input, select {
             width: 100%;
             padding: 8px;
@@ -941,41 +964,48 @@
     }
 
     function handleTicketAction(action, ticketDiv) {
-        switch(action) {
-            case 'iniciar':
-                validatePasswordAndExecute(() => {
-                    if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
-                        const tsInput = ticketDiv.querySelector('.input-time');
-                        if (!tsInput || !tsInput.value || !/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(tsInput.value)) {
-                            alert('Por favor, insira um tempo válido no formato H:M:S');
-                            return;
-                        }
-                        const currentTime = new Date().toLocaleTimeString();
-                        const currentDate = new Date().toLocaleDateString();
-                        const horaInicioInput = ticketDiv.querySelector('input[id="hora_inicio"]');
-                        const dataAberturaInput = ticketDiv.querySelector('input[id="data_abertura"]');
-                        if (horaInicioInput) {
-                            horaInicioInput.value = currentTime;
-                        }
-                        if (dataAberturaInput) {
-                            dataAberturaInput.value = currentDate;
-                        }
-                        startTimer(ticketDiv);
-                        ticketDiv.setAttribute('data-timer-state', 'running');
-                        // Salva ticket aberto no servidor
-                        const novoTicket = getOpenTicketFromDOM(ticketDiv);
-                        saveOpenTicketToServer(novoTicket);
+    switch(action) {
+        case 'iniciar':
+            validatePasswordAndExecute(() => {
+                if (ticketDiv.getAttribute('data-timer-state') === 'stopped') {
+                    const tsInput = ticketDiv.querySelector('.input-time');
+                    if (!tsInput || !tsInput.value || !/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(tsInput.value)) {
+                        alert('Por favor, insira um tempo válido no formato H:M:S');
+                        return;
                     }
-                });
-                break;
-            case 'arquivar':
-                archiveTicket(ticketDiv);
-                break;
-            case 'comentar':
-                addComment(ticketDiv);
-                break;
-        }
+                    startTimer(ticketDiv);
+                    ticketDiv.setAttribute('data-timer-state', 'running');
+
+                    // DESABILITAR inputs/selects
+                    ticketDiv.querySelectorAll('input, select').forEach(el => {
+                        el.disabled = true;
+                    });
+
+                    // ESCONDER labels
+                    ticketDiv.querySelectorAll('.ticket-label').forEach(label => {
+                        label.style.display = 'none';
+                    });
+
+                    // DEIXAR CHAMADO COMPACTO (só botões/timer em linha)
+                    ticketDiv.classList.add('compact');
+                    const buttonContainer = ticketDiv.querySelector('.button-container');
+                    if (buttonContainer) buttonContainer.classList.add('compact');
+                    const timerDisplay = ticketDiv.querySelector('.timer');
+                    if (timerDisplay) timerDisplay.style.fontSize = '1em';
+
+                    const novoTicket = getOpenTicketFromDOM(ticketDiv);
+                    saveOpenTicketToServer(novoTicket);
+                }
+            });
+            break;
+        case 'arquivar':
+            archiveTicket(ticketDiv);
+            break;
+        case 'comentar':
+            addComment(ticketDiv);
+            break;
     }
+}
 
     function getOpenTicketFromDOM(ticketDiv) {
         return {
@@ -1008,15 +1038,12 @@
         ticketDiv.dataset.ticketId = ticket.id || Date.now();
 
         const fields = {
-            tempo_previsto: document.createElement('input'),
-            CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
-            PROBLEMA: createSelect(problemas, 'PROBLEMA'),
-            OPERADOR: createSelect(operadores, 'OPERADOR'),
-            EXECUTOR: createSelect(executores, 'EXECUTOR'),
-            hora_inicio: document.createElement('input'),
-            data_abertura: document.createElement('input'),
-            hora_fim: document.createElement('input')
-        };
+    tempo_previsto: document.createElement('input'),
+    CLIENTE: createSelect(ncOpcoes, 'CLIENTE'),
+    PROBLEMA: createSelect(problemas, 'PROBLEMA'),
+    OPERADOR: createSelect(operadores, 'OPERADOR'),
+    EXECUTOR: createSelect(executores, 'EXECUTOR')
+};
 
         fields.tempo_previsto.type = 'text';
         fields.tempo_previsto.className = 'input-time';
@@ -1036,17 +1063,6 @@
             }
         });
 
-        fields.hora_inicio.readOnly = true;
-        fields.hora_inicio.id = 'hora_inicio';
-        fields.hora_inicio.value = ticket.hora_inicio || '';
-
-        fields.data_abertura.readOnly = true;
-        fields.data_abertura.id = 'data_abertura';
-        fields.data_abertura.value = ticket.data_abertura || '';
-
-        fields.hora_fim.readOnly = true;
-        fields.hora_fim.id = 'hora_fim';
-        fields.hora_fim.value = ticket.hora_fim || '';
 
         fields.CLIENTE.value = ticket.cliente || '';
         fields.PROBLEMA.value = ticket.problema || '';
@@ -1054,16 +1070,14 @@
         fields.EXECUTOR.value = ticket.executor || '';
 
         Object.entries(fields).forEach(([key, field]) => {
-            const label = document.createElement('label');
-            label.textContent = {
-                tempo_previsto: 'TEMPO PREVISTO:',
-                hora_inicio: 'HORA DE INÍCIO:',
-                data_abertura: 'DATA DE ABERTURA:',
-                hora_fim: 'HORA FINAL:'
-            }[key] || key.toUpperCase() + ':';
-            ticketDiv.appendChild(label);
-            ticketDiv.appendChild(field);
-        });
+    const label = document.createElement('label');
+    label.textContent = {
+        tempo_previsto: 'TEMPO PREVISTO:'
+    }[key] || key.toUpperCase() + ':';
+    label.className = 'ticket-label'; // <--- aqui!
+    ticketDiv.appendChild(label);
+    ticketDiv.appendChild(field);
+});
 
         const timerDisplay = document.createElement('div');
         timerDisplay.className = 'timer';
