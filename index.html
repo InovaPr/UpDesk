@@ -186,6 +186,17 @@
     <button onclick="logout()">Logout</button>
     <div id="ticketList"></div>
 
+    <div id="simpleChamadosSection" style="margin-top: 30px;">
+    <h2>Chamados Simples</h2>
+    <div style="margin-bottom:10px;">
+        <input id="novoTitulo" placeholder="Título do chamado" style="width:200px;">
+        <input id="novaDescricao" placeholder="Descrição do chamado" style="width:300px;">
+        <button onclick="enviarChamadoSimples()">Adicionar Chamado</button>
+    </div>
+    <button onclick="listarChamadosSimples()" style="margin-bottom:10px;">Listar Chamados</button>
+    <div id="chamadosSimplesLista"></div>
+</div>
+
     <div id="databaseView" style="display: none;">
         <h2>Registros de Chamados</h2>
         <div class="input-group">
@@ -353,74 +364,84 @@
         };
     }
 
-    // SERVIDOR: Salvar chamado arquivado no servidor
-    async function saveArchivedTicketToServer(ticket) {
-        try {
-            await fetch('https://inovanet.ind.br/api/chamados_arquivados', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(ticket)
-            });
-            console.log('Chamado arquivado salvo no servidor');
-        } catch (error) {
-            console.error('Erro ao salvar chamado arquivado:', error);
-        }
-    }
-
-    // SERVIDOR: Buscar chamados arquivados do servidor
-    async function loadArchivedTicketsFromServer() {
-        try {
-            const response = await fetch('https://inovanet.ind.br/api/chamados_arquivados');
-            const archivedTickets = await response.json();
-            database = archivedTickets; // Atualiza o database local com dados do servidor
-            console.log('Chamados arquivados carregados do servidor:', database.length);
-        } catch (error) {
-            console.error('Erro ao carregar chamados arquivados:', error);
-            database = []; // Fallback para array vazio
-        }
-    }
-
-    // SERVIDOR: Salvar chamado aberto no servidor
     async function saveOpenTicketToServer(ticket) {
-        try {
-            await fetch('https://inovanet.ind.br/api/chamados_abertos', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(ticket)
-            });
-            console.log('Chamado aberto salvo no servidor');
-        } catch (error) {
-            console.error('Erro ao salvar chamado aberto:', error);
-        }
+    try {
+        await fetch('http://192.168.0.31:3000/chamados_abertos', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(ticket)
+        });
+        console.log('Chamado aberto salvo no servidor');
+    } catch (error) {
+        console.error('Erro ao salvar chamado aberto:', error);
     }
+}
 
     // SERVIDOR: Buscar chamados abertos do servidor
-    async function loadOpenTicketsFromServer() {
-        try {
-            const response = await fetch('https://inovanet.ind.br/api/chamados_abertos');
-            const openTickets = await response.json();
-            
-            // Limpa a lista atual antes de carregar os dados do servidor
-            const ticketList = document.getElementById('ticketList');
-            ticketList.innerHTML = '';
-            
-            // Adiciona cada ticket do servidor
-            openTickets.forEach(ticket => {
-                addNewTicketToDOM(ticket); // Função que só adiciona na tela, sem salvar no servidor
-            });
-            
-            console.log('Chamados abertos carregados do servidor:', openTickets.length);
-        } catch (error) {
-            console.error('Erro ao carregar chamados abertos:', error);
-        }
+    async function loadArchivedTicketsFromServer() {
+    try {
+        const response = await fetch('http://192.168.0.31:3000/chamados_arquivados');
+        const archivedTickets = await response.json();
+        database = archivedTickets; // Atualiza o database local com dados do servidor
+        console.log('Chamados arquivados carregados do servidor:', database.length);
+    } catch (error) {
+        console.error('Erro ao carregar chamados arquivados:', error);
+        database = []; // Fallback para array vazio
     }
+}
+
+
+// Função para listar todos os chamados simples
+async function listarChamadosSimples() {
+    try {
+        const res = await fetch('http://192.168.0.31:3000/chamados');
+        const chamados = await res.json();
+        const div = document.getElementById('chamadosSimplesLista');
+        if (!chamados.length) {
+            div.innerHTML = '<p>Nenhum chamado cadastrado.</p>';
+            return;
+        }
+        div.innerHTML = '<ul>' + chamados.map(c => 
+            `<li><b>${c.titulo}</b> — ${c.descricao} <span style="color: #888;">[id: ${c.id}]</span></li>`
+        ).join('') + '</ul>';
+    } catch (e) {
+        alert('Erro ao listar chamados simples!');
+    }
+}
+
+// Função para adicionar novo chamado simples
+async function enviarChamadoSimples() {
+    const titulo = document.getElementById('novoTitulo').value.trim();
+    const descricao = document.getElementById('novaDescricao').value.trim();
+    if (!titulo || !descricao) {
+        alert('Preencha título e descrição!');
+        return;
+    }
+    try {
+        const res = await fetch('http://192.168.0.31:3000/chamados', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ titulo, descricao })
+        });
+        if (!res.ok) {
+            const erro = await res.text();
+            alert('Erro ao adicionar chamado: ' + erro);
+            throw new Error(erro);
+        }
+        document.getElementById('novoTitulo').value = '';
+        document.getElementById('novaDescricao').value = '';
+        listarChamadosSimples();
+    } catch (e) {
+        alert('Erro ao adicionar chamado!\n' + e.message);
+    }
+}
 
     // SERVIDOR: Remover chamado aberto do servidor (quando arquivar)
     async function removeOpenTicketFromServer(ticketId) {
         try {
-            await fetch(`https://inovanet.ind.br/api/chamados_abertos/${ticketId}`, {
-                method: 'DELETE'
-            });
+           await fetch(`http://192.168.0.31:3000/chamados_abertos/${ticketId}`, {
+    method: 'DELETE'
+});
             console.log('Chamado aberto removido do servidor');
         } catch (error) {
             console.error('Erro ao remover chamado aberto:', error);
@@ -430,9 +451,9 @@
     // SERVIDOR: Limpar banco de dados no servidor
     async function clearDatabaseOnServer() {
         try {
-            await fetch('https://inovanet.ind.br/api/chamados_arquivados', {
-                method: 'DELETE'
-            });
+          await fetch('http://192.168.0.31:3000/chamados_arquivados', {
+    method: 'DELETE'
+});
             console.log('Banco de dados limpo no servidor');
         } catch (error) {
             console.error('Erro ao limpar banco de dados:', error);
@@ -1069,7 +1090,7 @@
         fields.OPERADOR.value = ticket.operador || '';
         fields.EXECUTOR.value = ticket.executor || '';
 
-        Object.entries(fields).forEach(([key, field]) => {
+Object.entries(fields).forEach(([key, field]) => {
     const label = document.createElement('label');
     label.textContent = {
         tempo_previsto: 'TEMPO PREVISTO:'
@@ -1113,9 +1134,13 @@
         }
     }
 
-    function addNewTicket(ticket = {}) {
-        addNewTicketToDOM(ticket);
-    }
+    async function addNewTicket(ticket = {}) {
+    addNewTicketToDOM(ticket);
+    const ticketList = document.getElementById('ticketList');
+    const ticketDiv = ticketList.lastElementChild;
+    const novoTicket = getOpenTicketFromDOM(ticketDiv);
+    await saveOpenTicketToServer(novoTicket);
+}
 
     document.addEventListener('DOMContentLoaded', () => {
         checkLoginState();
