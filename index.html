@@ -186,16 +186,6 @@
     <button onclick="logout()">Logout</button>
     <div id="ticketList"></div>
 
-    <div id="simpleChamadosSection" style="margin-top: 30px;">
-    <h2>Chamados Simples</h2>
-    <div style="margin-bottom:10px;">
-        <input id="novoTitulo" placeholder="Título do chamado" style="width:200px;">
-        <input id="novaDescricao" placeholder="Descrição do chamado" style="width:300px;">
-        <button onclick="enviarChamadoSimples()">Adicionar Chamado</button>
-    </div>
-    <button onclick="listarChamadosSimples()" style="margin-bottom:10px;">Listar Chamados</button>
-    <div id="chamadosSimplesLista"></div>
-</div>
 
     <div id="databaseView" style="display: none;">
         <h2>Registros de Chamados</h2>
@@ -378,7 +368,19 @@
 }
 
     // SERVIDOR: Buscar chamados abertos do servidor
-    async function loadArchivedTicketsFromServer() {
+ async function loadOpenTicketsFromServer() {
+    try {
+        const response = await fetch('http://192.168.0.31:3000/chamados_abertos');
+        const openTickets = await response.json();
+        const ticketList = document.getElementById('ticketList');
+        ticketList.innerHTML = '';
+        openTickets.forEach(ticket => addNewTicketToDOM(ticket));
+    } catch (error) {
+        console.error('Erro ao carregar chamados abertos:', error);
+    }
+}
+// Função para buscar chamados abertos no backend e exibir na tela
+async function loadArchivedTicketsFromServer() {
     try {
         const response = await fetch('http://192.168.0.31:3000/chamados_arquivados');
         const archivedTickets = await response.json();
@@ -390,51 +392,32 @@
     }
 }
 
-
-// Função para listar todos os chamados simples
-async function listarChamadosSimples() {
-    try {
-        const res = await fetch('http://192.168.0.31:3000/chamados');
-        const chamados = await res.json();
-        const div = document.getElementById('chamadosSimplesLista');
-        if (!chamados.length) {
-            div.innerHTML = '<p>Nenhum chamado cadastrado.</p>';
-            return;
-        }
-        div.innerHTML = '<ul>' + chamados.map(c => 
-            `<li><b>${c.titulo}</b> — ${c.descricao} <span style="color: #888;">[id: ${c.id}]</span></li>`
-        ).join('') + '</ul>';
-    } catch (e) {
-        alert('Erro ao listar chamados simples!');
+function checkLoginState() {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    if (isLoggedIn) {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        // Carrega dados do servidor
+        loadArchivedTicketsFromServer();
+        loadOpenTicketsFromServer(); // <-- ESSA LINHA GARANTE QUE OS CHAMADOS ABERTOS VOLTAM APÓS ATUALIZAR
+    } else {
+        document.getElementById('loginContainer').style.display = 'block';
+        document.getElementById('mainContainer').style.display = 'none';
     }
 }
 
-// Função para adicionar novo chamado simples
-async function enviarChamadoSimples() {
-    const titulo = document.getElementById('novoTitulo').value.trim();
-    const descricao = document.getElementById('novaDescricao').value.trim();
-    if (!titulo || !descricao) {
-        alert('Preencha título e descrição!');
-        return;
-    }
-    try {
-        const res = await fetch('http://192.168.0.31:3000/chamados', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ titulo, descricao })
-        });
-        if (!res.ok) {
-            const erro = await res.text();
-            alert('Erro ao adicionar chamado: ' + erro);
-            throw new Error(erro);
-        }
-        document.getElementById('novoTitulo').value = '';
-        document.getElementById('novaDescricao').value = '';
-        listarChamadosSimples();
-    } catch (e) {
-        alert('Erro ao adicionar chamado!\n' + e.message);
-    }
+// Exemplo de inicialização ao abrir a página
+document.addEventListener('DOMContentLoaded', () => {
+    checkLoginState();
+    // ... outros inits ...
+});
+
+async function addNewTicket(ticket = {}) {
+    addNewTicketToDOM(ticket);
+    // Não salve aqui, só salva no backend ao clicar em play!
 }
+
+
 
     // SERVIDOR: Remover chamado aberto do servidor (quando arquivar)
     async function removeOpenTicketFromServer(ticketId) {
@@ -732,14 +715,16 @@ async function enviarChamadoSimples() {
         ["Kaline", "123123"],
         ["Virgilio", "123123"],
         ["James", "123123"],
+        ["Iara", "123123"]
     ];
 
-    const operadores = ["", "Castelo","kaline", "Gabriel", "Jefferson"];
+    const operadores = ["", "Castelo","kaline", "Gabriel", "Jefferson","Iara"];
     const executores = ["", "Airton", "Damião", "Daniel", "Alison"];
-    const problemas = ["","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia"];
-    const ncOpcoes = ["","2", "4", "5", "8", "13", "15", "17", "18", "21", "22", "24", "26", "27", "36", "37", "40", "43"];
+    const problemas = ["","Acesso Lento","Acréscimo de canais","Adição de equipamento","Ajuste no IPV6","Ativação de Link","Ativação de Telefonia","Cliente entrou em contato pedindo uma informação técnica","Falha elétrica no cliente","Falha elétrica no POP da Inovanet","Falha no equipamento da Inovanet","Falha no fornecimento de internet pela ALGAR","Falha no fornecimento de internet pela BR DIGITAL","Falha no link de transporte","Help Desk Presencial","Help Desk Remoto","Help Desk Telefonia","Implantar cabo de internet","Mudança de endereço","Mudança de Equipamentos","Mudança de Local do Aparelho","Operadora de telefonia com falha de rotas","Orçamento","Outros","Portabilidade da linha","Problema na Hybrid","Problemas com páginas","Problemas no VOIP","Recolher equipamento","Rompimento do Backbone em Natal","Rompimento do drop do cliente em Ceará-Mirim","Rompimento do drop do cliente em Mossoró","Rompimento do drop do cliente em Natal","Rompimento do drop do cliente em Parnamirim","Rompimento no drop em STO","Rompimento no transporte da Intelnet","Rompimento no transporte para Ceará-Mirim","Rompimento no transporte para São José de Mipibu","Sem Acesso","Sem ping","Solicitação BGP","Solicitação de linha nova","Troca de CEO","Troca de conector tipo click","Troca de conector tipo RJ45","Troca de CTO","Troca de DROP","Troca de fonte com defeito","Troca de splitter"];
+    const ncOpcoes = ["","2","4","5","8","15","17","18","21","22","24","26","27","36","37","40","43","44","48","50","51","54","55","60","65","67","69","73","76","78","80","87","88","96","102","104","108","109","110","115","123","124","130","132","135","137","140","143","144","145","146","148","151","152","153","155","156","157","158","160","161","162","165","169","170","171","174","180","181","182","184","185","187","188","189","190","191","195","196","197","198","201","204","205","210","211","212","213","214","215","216","217","220","222","223","224","225","228","229","232","235","236","238","240","241","242","243","245","246","247","248","251","254","255","257","260","262","263","264","270","275","276","280","283","285","286","289","290","295","297","298","302","303","305","306","308","309","310","311","315","316","317","318","319","321","322","323","324","325","327","328","330","332","334","338","340","342","343","347","352","353","354","358","359","360","361","365","368","369","370","371","374","388","389","390","391","393","394","396","399","403","404","405","406","407","408","409","410","413","414","416","417","418","421","422","424","425","427","428","431","432","433","434","435","436","437","438","439","440","441","442","444","445","446","447","448","449","450","451","452","453","454","456","457","462","463","465","466","467","469","470","471","475","476","478","479","480","483","484","485","489","490","491","492","493","494","495","496","498","499","500","501","505","506","507","509","510","511","512","514","515","516","517","518","519","520","521","522","523","524","527","529","531","532","534","535","536","537","538","539","549","550","551","552","553","555","557","559","565","570","571","572","573","574","575","576","577","579","580","582","583","584"
+];
 
-    let database = []; // REMOVIDO localStorage - agora sempre vazio no início
+    let database = []; 
     let timers = new Map();
     let accumulatedTimes = new Map();
 
@@ -1056,7 +1041,7 @@ async function enviarChamadoSimples() {
         const ticketDiv = document.createElement('div');
         ticketDiv.className = 'ticket-row';
         // Se já tem id, mantém, senão gera um novo
-        ticketDiv.dataset.ticketId = ticket.id || Date.now();
+        ticketDiv.dataset.ticketId = ticket.id || (Date.now() + '-' + Math.random().toString(36).substr(2, 9));
 
         const fields = {
     tempo_previsto: document.createElement('input'),
